@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Question, QuestionDay } from "@/data/questions";
 import {
@@ -137,7 +138,15 @@ export default function Game() {
     <main className="flex-1 flex flex-col items-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-md flex flex-col gap-6">
         <header className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight">DailyGuess</h1>
+          <Link
+            href="/"
+            className="text-xs opacity-50 hover:opacity-80 transition"
+          >
+            ← Daily Games
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight mt-1">
+            DailyGuess
+          </h1>
           <p className="text-sm opacity-60 mt-1">
             Day #{questionDay.day} · How close can you get?
           </p>

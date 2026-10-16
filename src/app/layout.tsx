@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DailyGuess",
-  description: "A daily estimation game — how close can you get?",
+  title: "Daily Games",
+  description: "A new puzzle every day.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
