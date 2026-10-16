@@ -9,6 +9,7 @@ import {
   getTodayDateKey,
   loadStats,
   recordDayResult,
+  saveInProgress,
   scoreGuess,
   type DayResult,
   type QuestionResult,
@@ -64,6 +65,11 @@ export default function Game() {
     if (stats.history[dateKey]) {
       setResults(stats.history[dateKey].results);
       setPhase("summary");
+    } else if (stats.inProgress && stats.inProgress.dateKey === dateKey) {
+      setQuestionIndex(stats.inProgress.questionIndex);
+      setResults(stats.inProgress.results);
+      setPendingResult(stats.inProgress.pendingResult);
+      setPhase("playing");
     }
   }, []);
 
@@ -86,6 +92,7 @@ export default function Game() {
     setGuessInput("");
     setPendingResult(null);
     setPhase("playing");
+    saveInProgress({ dateKey, questionIndex: 0, results: [], pendingResult: null });
   }
 
   function submitGuess(e: React.FormEvent) {
@@ -95,8 +102,10 @@ export default function Game() {
     if (!Number.isFinite(parsed) || parsed < 0) return;
 
     const result = scoreGuess(parsed, currentQuestion.answer);
-    setResults([...results, result]);
+    const nextResults = [...results, result];
+    setResults(nextResults);
     setPendingResult(result);
+    saveInProgress({ dateKey, questionIndex, results: nextResults, pendingResult: result });
   }
 
   function continueAfterFeedback() {
@@ -105,7 +114,9 @@ export default function Game() {
     setGuessInput("");
 
     if (questionIndex + 1 < questionDay.questions.length) {
-      setQuestionIndex(questionIndex + 1);
+      const nextIndex = questionIndex + 1;
+      setQuestionIndex(nextIndex);
+      saveInProgress({ dateKey, questionIndex: nextIndex, results, pendingResult: null });
     } else {
       const totalPoints = results.reduce((sum, r) => sum + r.points, 0);
       const dayResult: DayResult = {

@@ -22,10 +22,18 @@ export type DayResult = {
   totalPoints: number;
 };
 
+export type InProgress = {
+  dateKey: string;
+  questionIndex: number;
+  results: QuestionResult[];
+  pendingResult: QuestionResult | null;
+};
+
 export type Stats = {
   streak: number;
   lastPlayedDateKey: string | null;
   history: Record<string, DayResult>;
+  inProgress: InProgress | null;
 };
 
 const STORAGE_KEY = "dailyguess-stats-v1";
@@ -77,16 +85,29 @@ export function tierFor(relativeError: number): Tier {
   return { emoji: "🟥", label: "Way off" };
 }
 
+const EMPTY_STATS: Stats = {
+  streak: 0,
+  lastPlayedDateKey: null,
+  history: {},
+  inProgress: null,
+};
+
 export function loadStats(): Stats {
   if (typeof window === "undefined") {
-    return { streak: 0, lastPlayedDateKey: null, history: {} };
+    return { ...EMPTY_STATS };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { streak: 0, lastPlayedDateKey: null, history: {} };
-    return JSON.parse(raw) as Stats;
+    if (!raw) return { ...EMPTY_STATS };
+    const parsed = JSON.parse(raw) as Partial<Stats>;
+    return {
+      streak: parsed.streak ?? 0,
+      lastPlayedDateKey: parsed.lastPlayedDateKey ?? null,
+      history: parsed.history ?? {},
+      inProgress: parsed.inProgress ?? null,
+    };
   } catch {
-    return { streak: 0, lastPlayedDateKey: null, history: {} };
+    return { ...EMPTY_STATS };
   }
 }
 
@@ -120,6 +141,14 @@ export function recordDayResult(dateKey: string, dayResult: DayResult): Stats {
   }
 
   stats.history[dateKey] = dayResult;
+  stats.inProgress = null;
+  saveStats(stats);
+  return stats;
+}
+
+export function saveInProgress(progress: InProgress): Stats {
+  const stats = loadStats();
+  stats.inProgress = progress;
   saveStats(stats);
   return stats;
 }
