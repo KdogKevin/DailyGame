@@ -96,6 +96,25 @@ export function applyAction(
   return { cash: portfolio.cash + amount, shares: portfolio.shares - qty };
 }
 
+/**
+ * Hides a headline's giveaway terms (company name, ticker, product/exec
+ * names) behind a neutral placeholder so the mystery stock stays hidden
+ * during play. The reveal screen always renders the original, unredacted
+ * headline text instead of calling this.
+ */
+export function redactHeadline(text: string, event: StockEvent): string {
+  const terms = [event.ticker, event.companyName, ...event.redactTerms]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  let redacted = text;
+  for (const term of terms) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    redacted = redacted.replace(new RegExp(escaped, "gi"), "[the company]");
+  }
+  return redacted;
+}
+
 export function formatMoney(n: number): string {
   const sign = n < 0 ? "-" : "";
   return `${sign}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;

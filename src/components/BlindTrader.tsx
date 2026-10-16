@@ -15,6 +15,7 @@ import {
   getTodayDateKey,
   loadStats,
   recordRunResult,
+  redactHeadline,
   saveInProgress,
   type Action,
   type DayTrade,
@@ -190,7 +191,10 @@ export default function BlindTrader() {
         {(phase === "choosing" || phase === "sizing") && (
           <PlayingScreen
             dayIndex={dayIndex}
-            headline={headline}
+            headline={{
+              dateLabel: headline.dateLabel,
+              headline: redactHeadline(headline.headline, event),
+            }}
             price={priceBefore}
             portfolio={portfolio}
             equity={equity}
