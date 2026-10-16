@@ -1,6 +1,21 @@
-import { QUESTION_DAYS, type QuestionDay } from "@/data/questions";
+import { QUESTION_DAYS, type Question, type QuestionDay } from "@/data/questions";
 
 const EPOCH = new Date(2026, 9, 16); // 2026-10-16, day 1
+
+export type Scale = { value: number; label: string };
+
+/**
+ * Derives the input scale for a question from the size of its answer, so
+ * new questions don't need a manually-authored `scale` to avoid asking
+ * players to type out a huge number digit by digit. A question can still
+ * set its own `scale` to override this.
+ */
+export function resolveScale(question: Question): Scale | undefined {
+  if (question.scale) return question.scale;
+  if (question.answer >= 1_000_000_000) return { value: 1_000_000_000, label: "billion" };
+  if (question.answer >= 1_000_000) return { value: 1_000_000, label: "million" };
+  return undefined;
+}
 
 export type Tier = {
   emoji: string;

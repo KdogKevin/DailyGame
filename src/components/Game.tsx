@@ -9,6 +9,7 @@ import {
   getTodayDateKey,
   loadStats,
   recordDayResult,
+  resolveScale,
   saveInProgress,
   scoreGuess,
   type DayResult,
@@ -101,7 +102,7 @@ export default function Game() {
     const entered = Number(guessInput.replace(/,/g, ""));
     if (!Number.isFinite(entered) || entered < 0) return;
 
-    const parsed = entered * (currentQuestion.scale?.value ?? 1);
+    const parsed = entered * (resolveScale(currentQuestion)?.value ?? 1);
     const result = scoreGuess(parsed, currentQuestion.answer);
     const nextResults = [...results, result];
     setResults(nextResults);
@@ -231,6 +232,8 @@ function PlayingScreen({
   onChangeGuess: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }) {
+  const scale = resolveScale(question);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between text-sm opacity-60">
@@ -242,10 +245,10 @@ function PlayingScreen({
 
       <p className="text-lg font-medium leading-snug">{question.prompt}</p>
 
-      {question.scale && (
+      {scale && (
         <p className="text-sm opacity-60 -mt-3">
-          Answer in {question.scale.label} (e.g. &quot;5&quot; means 5{" "}
-          {question.scale.label} {question.unit})
+          Answer in {scale.label} (e.g. &quot;5&quot; means 5 {scale.label}{" "}
+          {question.unit})
         </p>
       )}
 
@@ -261,7 +264,7 @@ function PlayingScreen({
             className="flex-1 bg-transparent outline-none text-lg"
           />
           <span className="text-sm opacity-60 whitespace-nowrap">
-            {question.scale ? `${question.scale.label} ${question.unit}` : question.unit}
+            {scale ? `${scale.label} ${question.unit}` : question.unit}
           </span>
         </div>
         <button
