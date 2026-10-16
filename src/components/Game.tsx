@@ -17,6 +17,23 @@ import {
 
 type Phase = "intro" | "playing" | "summary";
 
+function formatGuessInput(raw: string): string {
+  let cleaned = raw.replace(/[^0-9.]/g, "");
+
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot !== -1) {
+    cleaned =
+      cleaned.slice(0, firstDot + 1) +
+      cleaned.slice(firstDot + 1).replace(/\./g, "");
+  }
+
+  const [intPart, decPart] = cleaned.split(".");
+  const formattedInt =
+    intPart === "" ? "" : Number(intPart).toLocaleString("en-US");
+
+  return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+}
+
 type Loaded = {
   dateKey: string;
   questionDay: QuestionDay;
@@ -221,7 +238,7 @@ function PlayingScreen({
             autoFocus
             placeholder="Your guess"
             value={guessInput}
-            onChange={(e) => onChangeGuess(e.target.value)}
+            onChange={(e) => onChangeGuess(formatGuessInput(e.target.value))}
             className="flex-1 bg-transparent outline-none text-lg"
           />
           <span className="text-sm opacity-60 whitespace-nowrap">
