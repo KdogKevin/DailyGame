@@ -29,7 +29,10 @@ export default function Game() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [results, setResults] = useState<QuestionResult[]>([]);
   const [guessInput, setGuessInput] = useState("");
-  const [shareCopied, setShareCopied] = useState(false);
+  const [pendingResult, setPendingResult] = useState<QuestionResult | null>(
+    null
+  );
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
     // `new Date()` and localStorage only make sense client-side, so the
@@ -64,56 +67,39 @@ export default function Game() {
     setResults([]);
     setQuestionIndex(0);
     setGuessInput("");
+    setPendingResult(null);
     setPhase("playing");
   }
 
   function submitGuess(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentQuestion) return;
+    if (!currentQuestion || pendingResult) return;
     const parsed = Number(guessInput.replace(/,/g, ""));
     if (!Number.isFinite(parsed) || parsed < 0) return;
 
     const result = scoreGuess(parsed, currentQuestion.answer);
-    const nextResults = [...results, result];
-    setResults(nextResults);
+    setResults([...results, result]);
+    setPendingResult(result);
+  }
+
+  function continueAfterFeedback() {
+    if (!pendingResult) return;
+    setPendingResult(null);
     setGuessInput("");
 
     if (questionIndex + 1 < questionDay.questions.length) {
       setQuestionIndex(questionIndex + 1);
     } else {
-      const totalPoints = nextResults.reduce((sum, r) => sum + r.points, 0);
+      const totalPoints = results.reduce((sum, r) => sum + r.points, 0);
       const dayResult: DayResult = {
         dateKey,
         dayNumber: questionDay.day,
-        results: nextResults,
+        results,
         totalPoints,
       };
       const updatedStats = recordDayResult(dateKey, dayResult);
       setLoaded({ dateKey, questionDay, stats: updatedStats });
       setPhase("summary");
-    }
-  }
-
-  async function handleShare() {
-    if (!stats) return;
-    const dayResult = stats.history[dateKey];
-    if (!dayResult) return;
-    const text = buildShareText(dayResult, stats.streak);
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-        return;
-      } catch {
-        // user cancelled or share failed; fall back to clipboard
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
-    } catch {
-      // clipboard unavailable; nothing more we can do
     }
   }
 
@@ -131,7 +117,7 @@ export default function Game() {
           <IntroScreen stats={stats} onStart={startGame} />
         )}
 
-        {phase === "playing" && currentQuestion && (
+        {phase === "playing" && currentQuestion && !pendingResult && (
           <PlayingScreen
             question={currentQuestion}
             index={questionIndex}
@@ -142,17 +128,32 @@ export default function Game() {
           />
         )}
 
+        {phase === "playing" && currentQuestion && pendingResult && (
+          <FeedbackScreen
+            question={currentQuestion}
+            result={pendingResult}
+            isLastQuestion={questionIndex + 1 === questionDay.questions.length}
+            onContinue={continueAfterFeedback}
+          />
+        )}
+
         {phase === "summary" && (
           <SummaryScreen
             results={results}
             questions={questionDay.questions}
             streak={stats.streak}
             dayNumber={questionDay.day}
-            onShare={handleShare}
-            shareCopied={shareCopied}
+            onShare={() => setShareModalOpen(true)}
           />
         )}
       </div>
+
+      {shareModalOpen && stats.history[dateKey] && (
+        <ShareModal
+          text={buildShareText(stats.history[dateKey], stats.streak)}
+          onClose={() => setShareModalOpen(false)}
+        />
+      )}
     </main>
   );
 }
@@ -239,20 +240,67 @@ function PlayingScreen({
   );
 }
 
+function FeedbackScreen({
+  question,
+  result,
+  isLastQuestion,
+  onContinue,
+}: {
+  question: Question;
+  result: QuestionResult;
+  isLastQuestion: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="text-lg font-medium leading-snug">{question.prompt}</p>
+
+      <div className="border border-black/10 dark:border-white/15 rounded-lg px-4 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm opacity-60">Your guess</span>
+          <span className="font-semibold">
+            {formatNumber(result.guess)} {question.unit}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm opacity-60">Actual</span>
+          <span className="font-semibold">
+            {formatNumber(result.actual)} {question.unit}
+          </span>
+        </div>
+        <div className="h-px bg-black/10 dark:bg-white/15" />
+        <div className="flex items-center justify-between">
+          <span className="text-sm flex items-center gap-2">
+            <span className="text-xl">{result.tier.emoji}</span>
+            {result.tier.label}
+          </span>
+          <span className="font-bold text-lg">{result.points} pts</span>
+        </div>
+      </div>
+
+      <button
+        onClick={onContinue}
+        autoFocus
+        className="w-full rounded-lg bg-foreground text-background font-semibold py-3 px-6 hover:opacity-90 transition"
+      >
+        {isLastQuestion ? "See results" : "Next question"}
+      </button>
+    </div>
+  );
+}
+
 function SummaryScreen({
   results,
   questions,
   streak,
   dayNumber,
   onShare,
-  shareCopied,
 }: {
   results: QuestionResult[];
   questions: readonly Question[];
   streak: number;
   dayNumber: number;
   onShare: () => void;
-  shareCopied: boolean;
 }) {
   const totalPoints = results.reduce((sum, r) => sum + r.points, 0);
   const maxPoints = results.length * 100;
@@ -305,12 +353,95 @@ function SummaryScreen({
         onClick={onShare}
         className="w-full rounded-lg bg-foreground text-background font-semibold py-3 px-6 hover:opacity-90 transition"
       >
-        {shareCopied ? "Copied!" : "Share results"}
+        Share results
       </button>
 
       <p className="text-center text-xs opacity-50">
         Come back tomorrow for day #{dayNumber + 1}.
       </p>
+    </div>
+  );
+}
+
+function ShareModal({ text, onClose }: { text: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const encoded = encodeURIComponent(text);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard unavailable; user can still select the text manually
+    }
+  }
+
+  async function handleNativeShare() {
+    if (!navigator.share) return;
+    try {
+      await navigator.share({ text });
+    } catch {
+      // user cancelled; nothing to do
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm bg-background border border-black/10 dark:border-white/15 rounded-xl p-5 flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-semibold">Share your results</h2>
+
+        <pre className="whitespace-pre-wrap text-sm border border-black/10 dark:border-white/15 rounded-lg px-3 py-3 font-sans">
+          {text}
+        </pre>
+
+        <button
+          onClick={handleCopy}
+          className="w-full rounded-lg bg-foreground text-background font-semibold py-2.5 px-4 hover:opacity-90 transition"
+        >
+          {copied ? "Copied!" : "Copy to clipboard"}
+        </button>
+
+        <div className="flex gap-2">
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encoded}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center text-sm rounded-lg border border-black/15 dark:border-white/20 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 transition"
+          >
+            Share to X
+          </a>
+          <a
+            href={`https://wa.me/?text=${encoded}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center text-sm rounded-lg border border-black/15 dark:border-white/20 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 transition"
+          >
+            WhatsApp
+          </a>
+          {typeof navigator !== "undefined" && !!navigator.share && (
+            <button
+              onClick={handleNativeShare}
+              className="flex-1 text-center text-sm rounded-lg border border-black/15 dark:border-white/20 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 transition"
+            >
+              More
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="text-sm opacity-60 hover:opacity-100 transition"
+        >
+          Close
+        </button>
+      </div>
     </div>
   );
 }
