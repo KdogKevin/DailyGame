@@ -14,6 +14,13 @@ export type StockEvent = {
   priceSource: string;
   headlines: HeadlineDay[]; // length 10
   summary: string;
+  /**
+   * Words/names that give away the company's identity when they appear
+   * inside headline text (short names, product names, etc.) — redacted
+   * from headlines shown during play via `redactHeadline` in
+   * lib/blindtrader.ts. The reveal screen always shows the original text.
+   */
+  redactTerms: string[];
 };
 
 export const STOCK_EVENTS: StockEvent[] = [
@@ -27,6 +34,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for GME, Jan 14–29 2021 (split-adjusted for GameStop's later 4-for-1 stock split; close of $86.88 on Jan 27, 2021 is GameStop's recognized all-time-high close).",
+    redactTerms: ["GameStop", "Gamestonk"],
     headlines: [
       {
         day: 1,
@@ -113,6 +121,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for AMC, May 27 – Jun 11 2021 (pre-2023 reverse-split basis; $625.50 close on June 2, 2021 is AMC's recognized all-time-high close).",
+    redactTerms: ["AMC", "Adam Aron"],
     headlines: [
       {
         day: 1,
@@ -199,6 +208,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for TSLA, Feb 19 – Mar 4 2020 (adjusted for Tesla's later 5-for-1 and 3-for-1 stock splits).",
+    redactTerms: ["Tesla"],
     headlines: [
       {
         day: 1,
@@ -285,6 +295,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for NVDA, May 12 – May 26 2023 (adjusted for Nvidia's later 10-for-1 stock split).",
+    redactTerms: ["Nvidia", "NVIDIA", "Jensen Huang"],
     headlines: [
       {
         day: 1,
@@ -370,6 +381,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for CVNA, May 4 – May 18 2022 (adjusted for Carvana's later 1-for-25 reverse stock split).",
+    redactTerms: ["Carvana", "ADESA"],
     headlines: [
       {
         day: 1,
@@ -456,6 +468,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for PTON, Jan 13 – Jan 28 2022.",
+    redactTerms: ["Peloton", "John Foley"],
     headlines: [
       {
         day: 1,
@@ -542,6 +555,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for RIVN, Nov 10 – Nov 24 2021 (first trading day's close used as the baseline, since Nov 10, 2021 was Rivian's IPO day).",
+    redactTerms: ["Rivian", "R1T"],
     headlines: [
       {
         day: 1,
@@ -628,6 +642,7 @@ export const STOCK_EVENTS: StockEvent[] = [
     ],
     priceSource:
       "Yahoo Finance historical daily closes for META, Jan 27 – Feb 10 2022.",
+    redactTerms: ["Meta Platforms", "Meta", "Facebook", "Instagram"],
     headlines: [
       {
         day: 1,
