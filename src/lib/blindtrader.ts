@@ -96,22 +96,30 @@ export function applyAction(
   return { cash: portfolio.cash + amount, shares: portfolio.shares - qty };
 }
 
+function replaceTerms(text: string, terms: string[], placeholder: string): string {
+  let redacted = text;
+  for (const term of [...terms].sort((a, b) => b.length - a.length)) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    redacted = redacted.replace(new RegExp(escaped, "gi"), placeholder);
+  }
+  return redacted;
+}
+
 /**
- * Hides a headline's giveaway terms (company name, ticker, product/exec
- * names) behind a neutral placeholder so the mystery stock stays hidden
- * during play. The reveal screen always renders the original, unredacted
- * headline text instead of calling this.
+ * Hides a headline's giveaway terms behind neutral placeholders so the
+ * mystery stock stays hidden during play — company/product terms become
+ * "[the company]" and people's names become "[an executive]" (kept
+ * separate so e.g. "Nvidia CEO Jensen Huang" doesn't collapse into
+ * "[the company] CEO [the company]"). The reveal screen always renders
+ * the original, unredacted headline text instead of calling this.
  */
 export function redactHeadline(text: string, event: StockEvent): string {
-  const terms = [event.ticker, event.companyName, ...event.redactTerms]
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length);
-
-  let redacted = text;
-  for (const term of terms) {
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    redacted = redacted.replace(new RegExp(escaped, "gi"), "[the company]");
-  }
+  let redacted = replaceTerms(
+    text,
+    [event.ticker, event.companyName, ...event.redactTerms].filter(Boolean),
+    "[the company]"
+  );
+  redacted = replaceTerms(redacted, event.redactNames, "[an executive]");
   return redacted;
 }
 

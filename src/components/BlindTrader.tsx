@@ -195,6 +195,7 @@ export default function BlindTrader() {
               dateLabel: headline.dateLabel,
               headline: redactHeadline(headline.headline, event),
             }}
+            closesSoFar={event.closes.slice(0, dayIndex + 1)}
             price={priceBefore}
             portfolio={portfolio}
             equity={equity}
@@ -214,6 +215,7 @@ export default function BlindTrader() {
         {phase === "feedback" && lastTrade && (
           <FeedbackScreen
             trade={lastTrade}
+            closesSoFar={event.closes.slice(0, dayIndex + 2)}
             isLastDay={bankrupt || dayIndex + 1 >= TRADING_DAYS}
             bankrupt={bankrupt}
             onContinue={continueAfterFeedback}
@@ -247,6 +249,49 @@ function getRunDayNumber(dateKey: string): number {
   return Math.floor((date.getTime() - EPOCH.getTime()) / 86400000) + 1;
 }
 
+const SPARK_WIDTH = 300;
+const SPARK_HEIGHT = 56;
+const SPARK_PAD = 6;
+
+/** A running price sparkline that reveals one more point as the player advances through the round. The stock's own scale/axis is never labeled — only the shape of the move. */
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) {
+    return (
+      <div className="h-14 flex items-center justify-center text-xs opacity-40">
+        Price history will build up as the round goes on
+      </div>
+    );
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const innerW = SPARK_WIDTH - SPARK_PAD * 2;
+  const innerH = SPARK_HEIGHT - SPARK_PAD * 2;
+
+  const points = values.map((v, i) => {
+    const x = SPARK_PAD + (i / (values.length - 1)) * innerW;
+    const y = SPARK_PAD + innerH - ((v - min) / span) * innerH;
+    return [x, y] as const;
+  });
+
+  const path = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const [lastX, lastY] = points[points.length - 1];
+  const up = values[values.length - 1] >= values[0];
+
+  return (
+    <svg
+      viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
+      className="w-full h-14 text-foreground/70"
+      preserveAspectRatio="none"
+      aria-label="Price history so far"
+    >
+      <path d={path} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lastX} cy={lastY} r={3.5} className={up ? "fill-green-500" : "fill-red-500"} />
+    </svg>
+  );
+}
+
 function IntroScreen({ stats, onStart }: { stats: Stats; onStart: () => void }) {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -275,6 +320,7 @@ function IntroScreen({ stats, onStart }: { stats: Stats; onStart: () => void }) 
 function PlayingScreen({
   dayIndex,
   headline,
+  closesSoFar,
   price,
   portfolio,
   equity,
@@ -288,6 +334,7 @@ function PlayingScreen({
 }: {
   dayIndex: number;
   headline: { dateLabel: string; headline: string };
+  closesSoFar: number[];
   price: number;
   portfolio: Portfolio;
   equity: number;
@@ -334,6 +381,8 @@ function PlayingScreen({
           <p className="font-semibold">{formatMoney(equity)}</p>
         </div>
       </div>
+
+      <Sparkline values={closesSoFar} />
 
       {phase === "choosing" && (
         <div className="grid grid-cols-3 gap-2">
@@ -401,11 +450,13 @@ function PlayingScreen({
 
 function FeedbackScreen({
   trade,
+  closesSoFar,
   isLastDay,
   bankrupt,
   onContinue,
 }: {
   trade: DayTrade;
+  closesSoFar: number[];
   isLastDay: boolean;
   bankrupt: boolean;
   onContinue: () => void;
@@ -445,6 +496,8 @@ function FeedbackScreen({
           <span className="font-bold text-lg">{formatMoney(trade.equityAfter)}</span>
         </div>
       </div>
+
+      <Sparkline values={closesSoFar} />
 
       {bankrupt && (
         <p className="text-sm text-red-500 font-medium text-center">
