@@ -128,11 +128,14 @@ export function formatNumber(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
+export const SITE_URL = "https://daily.kcnguyen.com";
+
 export function buildShareText(dayResult: DayResult, streak: number): string {
   const grid = dayResult.results.map((r) => r.tier.emoji).join("");
   return [
     `DailyGuess #${dayResult.dayNumber} — ${dayResult.totalPoints}/500`,
     grid,
     `🔥 ${streak} day streak`,
+    SITE_URL,
   ].join("\n");
 }
