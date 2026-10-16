@@ -298,8 +298,9 @@ function FeedbackScreen({
         </div>
         <div className="h-px bg-black/10 dark:bg-white/15" />
         <div className="flex items-center justify-between">
-          <span className="text-sm flex items-center gap-2">
-            <span className="text-xl">{result.tier.emoji}</span>
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold text-white ${result.tier.color}`}
+          >
             {result.tier.label}
           </span>
           <span className="font-bold text-lg">{result.points} pts</span>
@@ -340,9 +341,13 @@ function SummaryScreen({
           {totalPoints}
           <span className="text-lg opacity-50">/{maxPoints}</span>
         </p>
-        <p className="text-2xl mt-2 tracking-widest">
+        <p className="flex items-center justify-center gap-1.5 mt-3">
           {results.map((r, i) => (
-            <span key={i}>{r.tier.emoji}</span>
+            <span
+              key={i}
+              className={`inline-block w-4 h-4 rounded ${r.tier.color}`}
+              aria-hidden
+            />
           ))}
         </p>
         <p className="text-sm opacity-60 mt-2">
@@ -369,8 +374,12 @@ function SummaryScreen({
                 </span>{" "}
                 {questions[i].unit}
               </span>
-              <span className="text-sm font-medium whitespace-nowrap ml-2">
-                {r.tier.emoji} {r.points} pts
+              <span className="flex items-center gap-1.5 text-sm font-medium whitespace-nowrap ml-2">
+                <span
+                  className={`inline-block w-2.5 h-2.5 rounded-full ${r.tier.color}`}
+                  aria-hidden
+                />
+                {r.points} pts
               </span>
             </div>
           </li>

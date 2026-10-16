@@ -5,6 +5,8 @@ const EPOCH = new Date(2026, 9, 16); // 2026-10-16, day 1
 export type Tier = {
   emoji: string;
   label: string;
+  /** Tailwind background color class used for in-app badges. */
+  color: string;
 };
 
 export type QuestionResult = {
@@ -79,10 +81,15 @@ export function scoreGuess(guess: number, actual: number): QuestionResult {
 }
 
 export function tierFor(relativeError: number): Tier {
-  if (relativeError <= 0.1) return { emoji: "🟩", label: "Nailed it" };
-  if (relativeError <= 0.5) return { emoji: "🟨", label: "Close" };
-  if (relativeError <= 2) return { emoji: "🟧", label: "Ballpark" };
-  return { emoji: "🟥", label: "Way off" };
+  if (relativeError <= 0.05)
+    return { emoji: "🟩", label: "Nailed it", color: "bg-green-500" };
+  if (relativeError <= 0.2)
+    return { emoji: "🟩", label: "Great", color: "bg-lime-500" };
+  if (relativeError <= 0.5)
+    return { emoji: "🟨", label: "Close", color: "bg-yellow-500" };
+  if (relativeError <= 1.2)
+    return { emoji: "🟧", label: "Ballpark", color: "bg-orange-500" };
+  return { emoji: "🟥", label: "Way off", color: "bg-red-500" };
 }
 
 const EMPTY_STATS: Stats = {
