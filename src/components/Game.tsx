@@ -98,9 +98,10 @@ export default function Game() {
   function submitGuess(e: React.FormEvent) {
     e.preventDefault();
     if (!currentQuestion || pendingResult) return;
-    const parsed = Number(guessInput.replace(/,/g, ""));
-    if (!Number.isFinite(parsed) || parsed < 0) return;
+    const entered = Number(guessInput.replace(/,/g, ""));
+    if (!Number.isFinite(entered) || entered < 0) return;
 
+    const parsed = entered * (currentQuestion.scale?.value ?? 1);
     const result = scoreGuess(parsed, currentQuestion.answer);
     const nextResults = [...results, result];
     setResults(nextResults);
@@ -241,6 +242,13 @@ function PlayingScreen({
 
       <p className="text-lg font-medium leading-snug">{question.prompt}</p>
 
+      {question.scale && (
+        <p className="text-sm opacity-60 -mt-3">
+          Answer in {question.scale.label} (e.g. &quot;5&quot; means 5{" "}
+          {question.scale.label} {question.unit})
+        </p>
+      )}
+
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
         <div className="flex items-center gap-2 border border-black/15 dark:border-white/20 rounded-lg px-3 py-3 focus-within:border-foreground/60">
           <input
@@ -253,7 +261,7 @@ function PlayingScreen({
             className="flex-1 bg-transparent outline-none text-lg"
           />
           <span className="text-sm opacity-60 whitespace-nowrap">
-            {question.unit}
+            {question.scale ? `${question.scale.label} ${question.unit}` : question.unit}
           </span>
         </div>
         <button

@@ -14,6 +14,12 @@ export type Question = {
   unit: string;
   answer: number;
   source: string;
+  /**
+   * When the answer is large enough that a raw guess invites wild misses,
+   * players enter their guess in this unit instead (e.g. "86" for 86
+   * billion) and it's scaled back up before scoring.
+   */
+  scale?: { value: number; label: string };
 };
 
 export type QuestionDay = {
@@ -52,6 +58,7 @@ export const QUESTION_DAYS: QuestionDay[] = [
         unit: "neurons",
         answer: 86000000000,
         source: "Azevedo et al. 2009, isotropic fractionator study",
+        scale: { value: 1000000000, label: "billion" },
       },
       {
         id: "d1q4",
@@ -216,6 +223,7 @@ export const QUESTION_DAYS: QuestionDay[] = [
         unit: "sq km",
         answer: 9200000,
         source: "Commonly-cited geographic survey, approx.",
+        scale: { value: 1000000, label: "million" },
       },
       {
         id: "d5q2",
@@ -232,6 +240,7 @@ export const QUESTION_DAYS: QuestionDay[] = [
         unit: "Earths",
         answer: 1300000,
         source: "NASA volume comparison",
+        scale: { value: 1000000, label: "million" },
       },
       {
         id: "d5q4",
